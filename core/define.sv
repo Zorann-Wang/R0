@@ -1,7 +1,7 @@
 `define RESET_ADDR      32'h0
 
-`define REG_ADDR_BUS    [4:0]
-`define REG_DATA_BUS    [31:0]
+`define REG_ADDR_BUS    4:0
+`define REG_DATA_BUS    31:0
 
 `define ROM_DEPTH       4096  // rom depth(how many words)
 
@@ -9,17 +9,17 @@
 `define MEM_DATA_BUS    31:0
 `define MEM_ADDR_BUS    31:0
 
-`define HOLD_BUS        [2:0]
+`define HOLD_BUS        2:0
 `define HOLD_NONE       3'b000
 `define HOLD_PC         3'b001
 `define HOLD_IF_ID      3'b010
 `define HOLD_ID_EX      3'b011
 
-`define INST_DATA_BUS   [31:0]      // width for instruction data bus
-`define INST_ADDR_BUS   [31:0]      // width for instruction address bus
-`define INST_NOP        32'h0013   // no operation; machine code for addi x0, x0, 0
+`define INST_DATA_BUS   31:0      // width for instruction data bus
+`define INST_ADDR_BUS   31:0      // width for instruction address bus
+`define INST_NOP        32'h0013  // no operation; machine code for addi x0, x0, 0
 
-`define INT_BUS         [7:0]       // width for interrupt bus
+`define INT_BUS         7:0       // width for interrupt bus
 `define INT_NONE        8'h0
 `define INT_TIMER       8'h1
 
@@ -96,3 +96,15 @@
 `define INST_FENCE_I    8'b1000_1111
 `define INST_ECALL      8'b0111_0011
 `define INST_EBREAK     8'b1111_0011
+
+// ALU operation code
+`define ALU_ADD      4'b0001
+`define ALU_SUB      4'b0010
+`define ALU_SLL      4'b0011  
+`define ALU_SLT      4'b0100  
+`define ALU_SLTU     4'b0101  
+`define ALU_XOR      4'b0110
+`define ALU_SRL      4'b0111  
+`define ALU_SRA      4'b1000  
+`define ALU_OR       4'b1001
+`define ALU_AND      4'b1010
