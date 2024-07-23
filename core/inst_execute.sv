@@ -18,6 +18,14 @@ module inst_execute (
     output  reg                         reg_wen_o,
     output  reg  [`INST_REG_ADDR]       reg_waddr_o,
     output  reg  [`INST_REG_DATA]       reg_wdata_o,
+    
+    // memory
+    input   wire [`INST_ADDR_BUS]       mem_raddr_i,
+    input   wire [`INST_DATA_BUS]       mem_rdata_i,
+    output  reg                         mem_rib_wreq_o,
+    output  reg                         mem_wen_o, 
+    output  wire [`INST_ADDR_BUS]       mem_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       mem_wdata_o,
 
     input   wire                        csr_wen_i,        
     input   wire [`REG_DATA_BUS]        csr_rdata_i,      
@@ -47,36 +55,179 @@ always_comb begin
         `INST_R_TYPE: begin
             priority case (func3)
                 `INST_ADD, `INST_SUB: begin
-                    alu_data1_o = reg1_rdata_i;
-                    alu_data2_o = reg2_rdata_i;
-                    alu_op_o    = (func7) ? `ALU_SUB : `ALU_ADD;
-                    reg_wen_o   = 1'b1;
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = (func7) ? `ALU_SUB : `ALU_ADD;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
                 end
 
                 `INST_SLL: begin
-                    alu_data1_o = reg1_rdata_i;
-                    alu_data2_o = reg2_rdata_i;
-                    alu_op_o    = `ALU_SLL;
-                    reg_wen_o   = 1'b1;
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_SLL;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
                 end
 
                 `INST_SLT: begin
-                    alu_data1_o = reg1_rdata_i;
-                    alu_data2_o = reg2_rdata_i;
-                    alu_op_o    = `ALU_SLT;
-                    reg_wen_o   = 1'b1;
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_SLT;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
                 end
 
                 `INST_SLTU: begin
-                    alu_data1_o = reg1_rdata_i;
-                    alu_data2_o = reg2_rdata_i;
-                    alu_op_o    = `ALU_SLTU;
-                    reg_wen_o   = 1'b1;
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_SLTU;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
                 end
 
-                default: 
+                `INST_XOR: begin
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_XOR;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
+                end
+
+                `INST_SRL: begin
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_SRL;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
+                end
+
+                `INST_SRA: begin
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_SRA;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
+                end
+
+                `INST_OR: begin
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_OR;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
+                end
+
+                `INST_AND: begin
+                    alu_data1_o     = reg1_rdata_i;
+                    alu_data2_o     = reg2_rdata_i;
+                    alu_op_o        = `ALU_AND;
+                    reg_wen_o       = 1'b1;
+                    reg_waddr_o     = reg_wr_addr_i;
+                    reg_wdata_o     = alu_res_i;
+                end
+
+                default: begin
+                    alu_data1_o     = 32'b0;
+                    alu_data2_o     = 32'b0;
+                    alu_op_o        = 4'b0;
+                    reg_wen_o       = 1'b0;
+                    reg_waddr_o     = 5'b0;
+                    reg_wdata_o     = 32'b0;
+                end
             endcase
         end
+
+        `INST_L_TYPE: begin
+            alu_data1_o     = 32'b0;
+            alu_data2_o     = 32'b0;
+            alu_op_o        = 4'b0;
+            reg_wen_o       = 1'b0;
+            reg_waddr_o     = 5'b0;
+
+            priority case (func3)
+                `INST_LB: begin
+                    priority case(mem_raddr_i[1:0])
+                        2'b00: begin
+                            reg_wdata_o = {{24{mem_rdata_i[7]}}, mem_rdata_i[7:0]};
+                        end
+                        2'b01: begin
+                            reg_wdata_o = {{24{mem_rdata_i[15]}}, mem_rdata_i[15:8]};
+                        end
+                        2'b10: begin
+                            reg_wdata_o = {{24{mem_rdata_i[23]}}, mem_rdata_i[23:16]};
+                        end
+                        2'b11: begin
+                            reg_wdata_o = {{24{mem_rdata_i[31]}}, mem_rdata_i[31:24]};
+                        end
+                    endcase
+                end
+
+                `INS_LH: begin
+                    if(~(|mem_raddr_i[1:0])) begin
+                        reg_wdata_o = {{16{mem_rdata_i[15]}}, mem_rdata_i[15:0]};
+                    end
+                    else begin
+                        reg_wdata_o = {{16{mem_rdata_i[31]}}, mem_rdata_i[31:16]};
+                    end
+                end
+
+                `INS_LW: begin
+                    reg_wdata_o = mem_rdata_i;
+                end
+
+                `INS_LBU: begin
+                    priority case(mem_raddr_i[1:0])
+                        2'b00: begin
+                            reg_wdata_o = {{24{1'b0}}, mem_rdata_i[7:0]};
+                        end
+                        2'b01: begin
+                            reg_wdata_o = {{24{1'b0}}, mem_rdata_i[15:8]};
+                        end
+                        2'b10: begin
+                            reg_wdata_o = {{24{1'b0}}, mem_rdata_i[23:16]};
+                        end
+                        2'b11: begin
+                            reg_wdata_o = {{24{1'b0}}, mem_rdata_i[31:24]};
+                        end
+                    endcase
+                end
+
+                `INS_LHU: begin
+                    if(mem_raddr_i[1:0] == 2'b00) begin
+                        reg_wdata_o = {{16{1'b0}}, mem_rdata_i[15:0]};
+                    end
+                    else begin
+                        reg_wdata_o = {{16{1'b0}}, mem_rdata_i[31:16]};
+                    end
+                end
+
+                default: begin
+                    reg_wdata_o = mem_rdata_i;
+                end
+            endcase
+        end
+
+                
+            endcase
+
+                default: begin
+                    alu_data1_o = 32'b0;
+                    alu_data2_o = 32'b0;
+                    alu_op_o        = 4'b0;
+                    reg_wen_o   = 1'b1;
+                end
+            endcase
+        end
+
         default: 
     endcase
     
