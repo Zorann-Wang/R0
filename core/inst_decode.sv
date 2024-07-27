@@ -6,19 +6,19 @@ module inst_decode(
     // from IF
     input   wire [`INST_DATA_BUS]       inst_i,            // instruction input
     input   wire [`INST_ADDR_BUS]       inst_addr_i,       // instruction address input
-    // from regs
+    
+    // gp_regs
     input   wire [`REG_DATA_BUS]        reg1_rdata_i,
     input   wire [`REG_DATA_BUS]        reg2_rdata_i,
-    // from csr reg
-    input   wire [`REG_DATA_BUS]        csr_rdata_i,
-    // from EX
-    input   wire                        ex_jump_flag_i,
-    // to regs
     output  reg  [`REG_ADDR_BUS]        reg1_raddr_o,
     output  reg  [`REG_ADDR_BUS]        reg2_raddr_o,
-    // to csr reg
-    output  reg  [`MEM_ADDR_BUS]        csr_raddr_o,     
-    // to ex
+    
+    // csr_reg
+    input   wire [`REG_DATA_BUS]        csr_rdata_i,
+    output  reg  [`MEM_ADDR_BUS]        csr_raddr_o,  
+
+    // EX
+    input   wire                        ex_jump_flag_i,
     output  reg  [`MEM_ADDR_BUS]        op1_o,
     output  reg  [`MEM_ADDR_BUS]        op2_o,
     output  reg  [`MEM_ADDR_BUS]        op1_jump_o,
@@ -51,110 +51,6 @@ always_comb begin
     opcode  = inst_i [6 :0]; 
 end
 
-/*
-always_comb begin
-    priority case (opcode)
-        `INST_R_TYPE: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = rs1;
-            reg2_raddr_o    = rs2;
-            op1_o           = reg1_rdata_i;
-            op2_o           = reg2_rdata_i;
-        end
-
-        `INST_L_TYPE: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = rs1;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = reg1_rdata_i;
-            op2_o           = {20{inst_i[31]},inst_i[31:20]};
-        end
-        
-        `INST_I_TYPE: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = rs1;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = reg1_rdata_i;
-            op2_o           = {20{inst_i[31]},inst_i[31:20]};
-        end
-
-        `INST_S_TYPE: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = 5'b0;
-            reg1_raddr_o    = rs1;
-            reg2_raddr_o    = rs2;
-            op1_o           = reg1_rdata_i;
-            op2_o           = {20{inst_i[31]},inst_i[31:25],inst_i[11:7]};
-        end
-
-        `INST_B_TYPE: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = 5'b0;
-            reg1_raddr_o    = rs1;
-            reg2_raddr_o    = rs2;
-            op1_o           = reg1_rdata_i;
-            op2_o           = {20{inst_i[31]},inst_i[7],inst_i[30:25],inst_i[11:8]};
-        end
-
-        `INST_LUI: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = 5'b0;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = {inst_i[31:12],12'b0};
-            op2_o           = 32'b0;
-        end
-
-         `INST_AUIPC: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = 5'b0;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = inst_addr_i;
-            op2_o           = {inst_i[31:12],12'b0};
-         end
-
-        `INST_JAL: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = 5'b0;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = inst_addr_i;
-            op2_o           = 32'h4;
-            op1_jump_o      = inst_addr_i;
-            op2_jump_o      = {{12{inst_i[31]}}, inst_i[19:12], inst_i[20], inst_i[30:21], 1'b0};
-        end
-
-        `INST_JALR: begin
-            reg_wen_o       = 1'b1;
-            reg_waddr_o     = rd;
-            reg1_raddr_o    = 5'b0;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = inst_addr_i;
-            op2_o           = 32'h4;
-            op1_jump_o      = reg1_rdata_i;
-            op2_jump_o      = {{20{inst_i[31]}}, inst_i[31:20]};
-        end
-
-        `INST_CSR_TYPE: begin
-            
-        end
-
-        default: begin
-            reg_wen_o       = 1'b0;
-            reg_waddr_o     = 5'b0;
-            reg1_raddr_o    = 5'b0;
-            reg2_raddr_o    = 5'b0;
-            op1_o           = 32'b0;
-            op2_o           = 32'b0;
-        end
-    endcase
-end
-*/
-
 always_comb begin
     inst_o          = inst_i;
     inst_addr_o     = inst_addr_i;
@@ -170,9 +66,9 @@ always_comb begin
                     reg_wen_o       = 1'b1;
                     reg_waddr_o     = rd;
                     reg1_raddr_o    = rs1;
-                    reg2_raddr_o    = 5'b0;
+                    reg2_raddr_o    = rs2;
                     op1_o           = reg1_rdata_i;
-                    op2_o           = {20{inst_i[31]},inst_i[31:20]};
+                    op2_o           = reg2_rdata_i;
                     op1_jump_o      = 32'b0;
                     op2_jump_o      = 32'b0;
                     csr_wen_o       = 1'b0;
@@ -201,9 +97,9 @@ always_comb begin
                     reg_wen_o       = 1'b1;
                     reg_waddr_o     = rd;
                     reg1_raddr_o    = rs1;
-                    reg2_raddr_o    = rs2;
+                    reg2_raddr_o    = 5'b0;
                     op1_o           = reg1_rdata_i;
-                    op2_o           = reg2_rdata_i;
+                    op2_o           = {20{inst_i[31]},inst_i[31:20]};;
                     op1_jump_o      = 32'b0;
                     op2_jump_o      = 32'b0;
                     csr_wen_o       = 1'b0;

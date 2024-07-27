@@ -20,11 +20,11 @@ always_comb begin
     priority case (alu_op_i)
         // arithmetic
         `ALU_ADD: begin
-            alu_data_o = $signed(alu_data1_i) + signed(alu_data2_i);
+            alu_data_o = $signed(alu_data1_i) + $signed(alu_data2_i);
         end
 
         `ALU_SUB: begin
-            alu_data_o = signed(alu_data1_i) - $signed(alu_data2_i);
+            alu_data_o = $signed(alu_data1_i) - $signed(alu_data2_i);
         end
 
         // logical
@@ -61,7 +61,7 @@ always_comb begin
 
         // unsigned comparison
         `ALU_SLTU: begin
-                alu_data_o = (alu_data1_i < alu_data2_i) ? 1 : 0; // 无符号数小于置1
+                alu_data_o = (alu_data1_i < alu_data2_i) ? 1 : 0; 
         end
         
         default: begin
