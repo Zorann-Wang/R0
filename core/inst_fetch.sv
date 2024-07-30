@@ -26,9 +26,9 @@ always_ff @(posedge clk_i) begin
         inst_addr_o         <= `RESET_ADDR;
     end
     else begin
-        ins_addr_o          <= {ins_addr_i[31:2], {2'b0}};
+        interrupt_flag_o    <= interrupt_flag_i;
         inst_o              <= inst_i;
-        int_flag_o          <= int_flag_i;
+        ins_addr_o          <= {ins_addr_i[31:2], {2'b0}};
     end
 end
 

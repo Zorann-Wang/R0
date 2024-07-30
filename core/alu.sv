@@ -56,12 +56,12 @@ always_comb begin
 
         // signed comparison
         `ALU_SLT: begin
-                alu_data_o = ($signed(alu_data1_i) < $signed(alu_data2_i)) ? 1 : 0; 
+                alu_data_o = ($signed(alu_data1_i) < $signed(alu_data2_i)) ? 32'b1 : 32'b0; 
         end
 
         // unsigned comparison
         `ALU_SLTU: begin
-                alu_data_o = (alu_data1_i < alu_data2_i) ? 1 : 0; 
+                alu_data_o = (alu_data1_i < alu_data2_i) ? 32'b1 : 32'b0; 
         end
         
         default: begin
