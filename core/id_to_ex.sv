@@ -14,8 +14,8 @@ module id_to_ex(
     input   reg                         reg_wen_i,             
     input   reg  [`REG_ADDR_BUS]        reg_waddr_i,    
     input   reg                         csr_wen_i,        
-    input   reg  [`MEM_DATA_BUS]        csr_rdata_i,      
-    input   reg  [`MEM_ADDR_BUS]        csr_waddr_i,   
+    input   reg  [`CSR_DATA_BUS]        csr_rdata_i,      
+    input   reg  [`CSR_ADDR_BUS]        csr_waddr_i,   
 
     // to EX     
     output  reg  [`REG_DATA_BUS]        op1_o,
@@ -26,8 +26,8 @@ module id_to_ex(
     output  reg                         reg_wen_o,             
     output  reg  [`REG_ADDR_BUS]        reg_waddr_o,    
     output  reg                         csr_wen_o,        
-    output  reg  [`MEM_DATA_BUS]        csr_rdata_o,      
-    output  reg  [`MEM_ADDR_BUS]        csr_waddr_o       
+    output  reg  [`CSR_DATA_BUS]        csr_rdata_o,      
+    output  reg  [`CSR_ADDR_BUS]        csr_waddr_o       
 );
 
 wire hold_en;

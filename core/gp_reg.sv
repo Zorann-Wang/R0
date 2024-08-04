@@ -1,6 +1,6 @@
 `include "defines.sv"
 
-module gp_regs (
+module gp_reg (
     input   wire                    clk_i,
     input   wire                    rst_n_i,
 
