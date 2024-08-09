@@ -28,7 +28,7 @@ module inst_decode(
     output  reg  [`REG_ADDR_BUS]        reg_waddr_o,    
     output  reg                         csr_wen_o,        
     output  reg  [`CSR_DATA_BUS]        csr_rdata_o,      
-    output  reg  [`CSR_ADDR_BUS]        csr_waddr_o     
+    output  reg  [`CSR_ADDR_BUS]        csr_waddr_o
 );
     
 // 32-bit instructions info
@@ -55,6 +55,11 @@ always_comb begin
 
     priority case (opcode)
         `INST_R_TYPE: begin
+            offset_o        = 32'b0;
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;
+
             priority case (func3)
                  `INST_ADD, `INST_SUB, `INST_SLL, `INST_SLT, `INST_SLTU, `INST_XOR, `INST_SRL, `INST_SRA, `INST_OR, `INST_AND: begin
                     reg_wen_o       = 1'b1;
@@ -63,10 +68,6 @@ always_comb begin
                     reg2_raddr_o    = rs2;
                     op1_o           = reg1_rdata_i;
                     op2_o           = reg2_rdata_i;
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -75,15 +76,16 @@ always_comb begin
                     reg2_raddr_o    = 5'b0;
                     op1_o           = 32'b0;
                     op2_o           = 32'b0;
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
             endcase
         end
 
         `INST_I_TYPE: begin
+            offset_o        = 32'b0;
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;
+
             priority case (func3)
                 `INST_ADDI, `INST_SLTI, `INST_SLTIU, `INST_XORI, `INST_ORI, `INST_ANDI, `INST_SLLI, `INST_SRLI, `INST_SRAI: begin
                     reg_wen_o       = 1'b1;
@@ -92,10 +94,6 @@ always_comb begin
                     reg2_raddr_o    = 5'b0;
                     op1_o           = reg1_rdata_i;
                     op2_o           = {20{inst_i[31]},inst_i[31:20]};
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -104,15 +102,16 @@ always_comb begin
                     reg2_raddr_o    = 5'b0;
                     op1_o           = 32'b0;
                     op2_o           = 32'b0;
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
             endcase
         end
 
         `INST_L_TYPE: begin
+            offset_o        = 32'b0;
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;         
+
             priority case (func3)
                  `INST_LB, `INST_LH, `INST_LW, `INST_LBU, `INST_LHU: begin
                     reg_wen_o       = 1'b1;
@@ -120,11 +119,7 @@ always_comb begin
                     reg1_raddr_o    = rs1;
                     reg2_raddr_o    = 5'b0;
                     op1_o           = reg1_rdata_i;
-                    op2_o           = {20{inst_i[31]},inst_i[31:20]};;
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
+                    op2_o           = {20{inst_i[31]},inst_i[31:20]};
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -133,10 +128,6 @@ always_comb begin
                     reg2_raddr_o    = 5'b0;
                     op1_o           = 32'b0;
                     op2_o           = 32'b0;
-                    offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
             endcase
         end
@@ -169,6 +160,10 @@ always_comb begin
         end
 
         `INST_S_TYPE: begin
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;
+
             priority case (func3)
                 `INST_SB, `INST_SH, `INST_SW: begin
                     reg_wen_o       = 1'b1;
@@ -178,9 +173,6 @@ always_comb begin
                     op1_o           = reg1_rdata_i;
                     op2_o           = reg2_rdata_i;
                     offset_o        = {20{inst_i[31]},inst_i[31:25],inst_i[11:7]};
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -190,14 +182,15 @@ always_comb begin
                     op1_o           = 32'b0;
                     op2_o           = 32'b0;
                     offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
             endcase
         end
 
         `INST_B_TYPE: begin
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;
+
             priority case (func3)
                 `INST_BEQ, `INST_BNE, `INST_BLT, `INST_BGE, `INST_BLTU, `INST_BGEU: begin
                     reg_wen_o       = 1'b1;
@@ -207,9 +200,6 @@ always_comb begin
                     op1_o           = reg1_rdata_i;
                     op2_o           = reg2_rdata_i;
                     offset_o        = {20{inst_i[31]},inst_i[7],inst_i[30:25],inst_i[11:8]};
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -219,9 +209,6 @@ always_comb begin
                     op1_o           = 32'b0;
                     op2_o           = 32'b0;
                     offset_o        = 32'b0;
-                    csr_wen_o       = 1'b0;
-                    csr_raddr_o     = 32'b0;
-                    csr_waddr_o     = 32'b0;
                 end
             endcase
         end
@@ -281,16 +268,16 @@ always_comb begin
         end
 
         `INST_FENCE: begin
-                reg_wen_o       = 1'b0;
-                reg_waddr_o     = 5'b0;
-                reg1_raddr_o    = 5'b0;
-                reg2_raddr_o    = 5'b0;
-                op1_o           = inst_addr_i;
-                op2_o           = 32'h4;
-                offset_o        = 32'b0;
-                csr_wen_o       = 1'b0;
-                csr_raddr_o     = 32'b0;
-                csr_waddr_o     = 32'b0;
+            reg_wen_o       = 1'b0;
+            reg_waddr_o     = 5'b0;
+            reg1_raddr_o    = 5'b0;
+            reg2_raddr_o    = 5'b0;
+            op1_o           = inst_addr_i;
+            op2_o           = 32'h4;
+            offset_o        = 32'b0;
+            csr_wen_o       = 1'b0;
+            csr_raddr_o     = 32'b0;
+            csr_waddr_o     = 32'b0;
         end
 
         default: begin
@@ -307,6 +294,5 @@ always_comb begin
         end
     endcase
 end
-
 
 endmodule

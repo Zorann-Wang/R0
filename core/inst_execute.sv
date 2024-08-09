@@ -28,6 +28,7 @@ module inst_execute (
     
     // memory
     input   wire [`MEM_DATA_BUS]        mem_rdata_i,
+    output  wire                        mem_rib_rreq_o,
     output  reg  [`MEM_ADDR_BUS]        mem_raddr_o,
     output  reg                         mem_rib_wreq_o,
     output  reg                         mem_wen_o, 
@@ -70,6 +71,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
             jump_flag_o     = 1'b0;
@@ -153,6 +155,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
             jump_flag_o     = 1'b0;
@@ -232,14 +235,15 @@ always_comb begin
         end
 
         `INST_L_TYPE: begin
-            alu_data1_o     = op1_i;
-            alu_data2_o     = offset_i;
+            alu_data1_o     = $signed(op1_i);
+            alu_data2_o     = $signed(op2_i);
             alu_op_o        = `ALU_ADD;
             csr_waddr_o     = 32'b0;
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b1;
             mem_raddr_o     = alu_res_i;
             jump_flag_o     = 1'b0;
             jump_addr_o     = 32'b0;
@@ -317,6 +321,7 @@ always_comb begin
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             jump_flag_o     = 1'b1;
             jump_addr_o     = alu_res_i;
@@ -332,20 +337,22 @@ always_comb begin
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             jump_flag_o     = 1'b1;
             jump_addr_o     = alu_res_i & ~32'b1;
         end
 
         `INST_S_TYPE: begin
-            alu_data1_o     = op1_i;
-            alu_data2_o     = offset_i;
+            alu_data1_o     = $signed(op1_i);
+            alu_data2_o     = $signed(offset_i);
             alu_op_o        = `ALU_ADD;
             reg_waddr_o     = 5'b0;
             csr_waddr_o     = 32'b0;
             mem_rib_wreq_o  = 1'b1;
             mem_wen_o       = 1'b1;
             mem_waddr_o     = alu_res_i;
+            mem_rib_rreq_o  = 1'b1;
             mem_raddr_o     = alu_res_i;
             jump_flag_o     = 1'b0;
             jump_addr_o     = 32'b0;
@@ -393,6 +400,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
 
@@ -464,6 +472,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
             jump_flag_o     = 1'b0;
@@ -479,6 +488,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
             jump_flag_o     = 1'b0;
@@ -486,6 +496,15 @@ always_comb begin
         end
 
         `INST_CSR_TYPE: begin
+            mem_rib_wreq_o  = 1'b0;
+            mem_wen_o       = 1'b0;
+            mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
+            mem_raddr_o     = 32'b0;
+            mem_wdata_o     = 32'b0;
+            jump_flag_o     = 1'b0;
+            jump_addr_o     = 32'b0;
+
             priority case (func3)
                 `INST_CSRRW, `INST_CSRRWI: begin
                     alu_data1_o     = 32'b0;
@@ -493,13 +512,6 @@ always_comb begin
                     alu_op_o        = 4'b0;
                     reg_wdata_o     = csr_rdata_i;
                     csr_wdata_o     = op1_i;
-                    mem_rib_wreq_o  = 1'b0;
-                    mem_wen_o       = 1'b0;
-                    mem_waddr_o     = 32'b0;
-                    mem_raddr_o     = 32'b0;
-                    mem_wdata_o     = 32'b0;
-                    jump_flag_o     = 1'b0;
-                    jump_addr_o     = 32'b0;
                 end
 
                 `INST_CSRRS, `INST_CSRRSI: begin
@@ -508,13 +520,6 @@ always_comb begin
                     alu_op_o        = `ALU_OR;
                     reg_wdata_o     = csr_rdata_i;
                     csr_wdata_o     = alu_res_i;
-                    mem_rib_wreq_o  = 1'b0;
-                    mem_wen_o       = 1'b0;
-                    mem_waddr_o     = 32'b0;
-                    mem_raddr_o     = 32'b0;
-                    mem_wdata_o     = 32'b0;
-                    jump_flag_o     = 1'b0;
-                    jump_addr_o     = 32'b0;
                 end
 
                 `INST_CSRRC, `INST_CSRRCI: begin
@@ -523,13 +528,6 @@ always_comb begin
                     alu_op_o        = `ALU_AND;
                     reg_wdata_o     = csr_rdata_i;
                     csr_wdata_o     = alu_res_i;
-                    mem_rib_wreq_o  = 1'b0;
-                    mem_wen_o       = 1'b0;
-                    mem_waddr_o     = 32'b0;
-                    mem_raddr_o     = 32'b0;
-                    mem_wdata_o     = 32'b0;
-                    jump_flag_o     = 1'b0;
-                    jump_addr_o     = 32'b0;
                 end
 
                 default: begin
@@ -538,13 +536,6 @@ always_comb begin
                     alu_op_o        = 4'b0;
                     reg_wdata_o     = 32'b0;
                     csr_wdata_o     = 32'b0;
-                    mem_rib_wreq_o  = 1'b0;
-                    mem_wen_o       = 1'b0;
-                    mem_waddr_o     = 32'b0;
-                    mem_raddr_o     = 32'b0;
-                    mem_wdata_o     = 32'b0;
-                    jump_flag_o     = 1'b0;
-                    jump_addr_o     = 32'b0;
                 end
             endcase
         end
@@ -558,6 +549,7 @@ always_comb begin
             mem_rib_wreq_o  = 1'b0;
             mem_wen_o       = 1'b0;
             mem_waddr_o     = 32'b0;
+            mem_rib_rreq_o  = 1'b0;
             mem_raddr_o     = 32'b0;
             mem_wdata_o     = 32'b0;
             jump_flag_o     = 1'b0;

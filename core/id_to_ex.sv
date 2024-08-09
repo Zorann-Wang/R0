@@ -3,6 +3,7 @@
 module id_to_ex(
     input   wire                        clk_i,
     input   wire                        rst_n_i,
+    
     input   wire [`HOLD_BUS]            hold_flag_i,                        
 
     // from ID   
@@ -27,7 +28,7 @@ module id_to_ex(
     output  reg  [`REG_ADDR_BUS]        reg_waddr_o,    
     output  reg                         csr_wen_o,        
     output  reg  [`CSR_DATA_BUS]        csr_rdata_o,      
-    output  reg  [`CSR_ADDR_BUS]        csr_waddr_o       
+    output  reg  [`CSR_ADDR_BUS]        csr_waddr_o
 );
 
 wire hold_en;

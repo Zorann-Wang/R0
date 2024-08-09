@@ -5,7 +5,6 @@ module alu(
     input   wire [`REG_DATA_BUS]    alu_data1_i, 
     input   wire [`REG_DATA_BUS]    alu_data2_i,
     input   wire [3:0]              alu_op_i,
-    
     output  reg [`REG_DATA_BUS]     alu_data_o   // alu algorithm result output
     //output  reg                     alu_zero_o,     // zero flag
     //output  reg                     alu_sign_o      // sign flag, 1: negative, 0: zero or positive
