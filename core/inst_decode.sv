@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module inst_decode(
     input   wire                        clk_i,
@@ -93,7 +93,7 @@ always_comb begin
                     reg1_raddr_o    = rs1;
                     reg2_raddr_o    = 5'b0;
                     op1_o           = reg1_rdata_i;
-                    op2_o           = {20{inst_i[31]},inst_i[31:20]};
+                    op2_o           = {{20{inst_i[31]}},inst_i[31:20]};
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -119,7 +119,7 @@ always_comb begin
                     reg1_raddr_o    = rs1;
                     reg2_raddr_o    = 5'b0;
                     op1_o           = reg1_rdata_i;
-                    op2_o           = {20{inst_i[31]},inst_i[31:20]};
+                    op2_o           = {{20{inst_i[31]}},inst_i[31:20]};
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -172,7 +172,7 @@ always_comb begin
                     reg2_raddr_o    = rs2;
                     op1_o           = reg1_rdata_i;
                     op2_o           = reg2_rdata_i;
-                    offset_o        = {20{inst_i[31]},inst_i[31:25],inst_i[11:7]};
+                    offset_o        = {{20{inst_i[31]}},inst_i[31:25],inst_i[11:7]};
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -199,7 +199,7 @@ always_comb begin
                     reg2_raddr_o    = rs2;
                     op1_o           = reg1_rdata_i;
                     op2_o           = reg2_rdata_i;
-                    offset_o        = {20{inst_i[31]},inst_i[7],inst_i[30:25],inst_i[11:8]};
+                    offset_o        = {{20{inst_i[31]}},inst_i[7],inst_i[30:25],inst_i[11:8]};
                 end
                 default: begin
                     reg_wen_o       = 1'b0;
@@ -233,7 +233,7 @@ always_comb begin
                     reg_waddr_o     = rd;
                     reg1_raddr_o    = rs1;
                     reg2_raddr_o    = 5'b0;
-                    op1_o           = reg1_raddr_i;
+                    op1_o           = reg1_rdata_i;
                     op2_o           = 32'b0;
                     offset_o        = 32'b0;
                     csr_wen_o       = 1'b1;
@@ -245,7 +245,7 @@ always_comb begin
                     reg_waddr_o     = rd;
                     reg1_raddr_o    = 5'b0;
                     reg2_raddr_o    = 5'b0;
-                    op1_o           = {27'h0, ins_i[19:15]};
+                    op1_o           = {27'h0, inst_i[19:15]};
                     op2_o           = 32'b0;
                     offset_o        = 32'b0;
                     csr_wen_o       = 1'b1;

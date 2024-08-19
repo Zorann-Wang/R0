@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module csr_reg (
     input   wire                        clk_i,
@@ -98,13 +98,13 @@ always_ff @( posedge clk_i ) begin
                 mscratch    <= 32'b0;
             end
             `CSR_MSCRATCH: begin
-                mmtvec      <= 32'b0;
+                mtvec       <= 32'b0;
                 mcause      <= 32'b0;
                 mepc        <= 32'b0;
                 mie         <= 32'b0;
                 mstatus     <= 32'b0;
                 mscratch    <= csr_wdata_i;
-            end: 
+            end
             default: begin
                 mtvec       <= 32'b0;
                 mcause      <= 32'b0;
@@ -158,13 +158,13 @@ always_ff @( posedge clk_i ) begin
                 mscratch    <= 32'b0;
             end
             `CSR_MSCRATCH: begin
-                mmtvec      <= 32'b0;
+                mtvec       <= 32'b0;
                 mcause      <= 32'b0;
                 mepc        <= 32'b0;
                 mie         <= 32'b0;
                 mstatus     <= 32'b0;
                 mscratch    <= clint_wdata_i;
-            end: 
+            end
             default: begin
                 mtvec       <= 32'b0;
                 mcause      <= 32'b0;

@@ -1,32 +1,32 @@
-`include "defines.sv"
+`include "define.sv"
 
 module gp_reg (
     input   wire                    clk_i,
     input   wire                    rst_n_i,
 
-    input   wire                    reg_wen_i,
-    input   wire [REG_ADDR_BUS]     reg_waddr_i,
-    input   wire [REG_DATA_BUS]     reg_wdata_i,
+    input   wire                     reg_wen_i,
+    input   wire [`REG_ADDR_BUS]     reg_waddr_i,
+    input   wire [`REG_DATA_BUS]     reg_wdata_i,
 
-    input   wire                    jtag_en_i,
-    input   wire [REG_ADDR_BUS]     jtag_addr_i,
-    input   wire [REG_DATA_BUS]     jtag_data_i,
-    output  wire [REG_DATA_BUS]     jtag_data_o,
+    input   wire                     jtag_en_i,
+    input   wire [`REG_ADDR_BUS]     jtag_addr_i,
+    input   wire [`REG_DATA_BUS]     jtag_data_i,
+    output  wire [`REG_DATA_BUS]     jtag_data_o,
 
-    input   wire [REG_ADDR_BUS]     reg1_raddr_i,
-    output  reg  [REG_DATA_BUS]     reg1_rdata_o,
-    input   wire [REG_ADDR_BUS]     reg2_raddr_i,
-    output  reg  [REG_DATA_BUS]     reg2_rdata_o
+    input   wire [`REG_ADDR_BUS]     reg1_raddr_i,
+    output  reg  [`REG_DATA_BUS]     reg1_rdata_o,
+    input   wire [`REG_ADDR_BUS]     reg2_raddr_i,
+    output  reg  [`REG_DATA_BUS]     reg2_rdata_o
 );
 
-integer     i;
-reg         [REG_DATA_BUS] regs [0:31];
-wire        reg_waddr_valid;
-wire        jtag_addr_valid;
-wire        reg1_raddr_valid;
-wire        reg2_raddr_valid;
-wire        reg1_addr_same;
-wire        reg2_addr_same;
+integer                 i;
+reg     [`REG_DATA_BUS] regs [0:31];
+wire                    reg_waddr_valid;
+wire                    jtag_addr_valid;
+wire                    reg1_raddr_valid;
+wire                    reg2_raddr_valid;
+wire                    reg1_addr_same;
+wire                    reg2_addr_same;
 
 always_comb begin 
     reg_waddr_valid     = (reg_waddr_i != 32'b0) ? 1'b1 : 1'b0;
@@ -44,10 +44,10 @@ always_ff @( posedge clk_i ) begin
         end
     end
     else if (reg_waddr_valid && reg_wen_i) begin
-        regs[waddr_i] <= reg_wdata_i;
+        regs[reg_waddr_i] <= reg_wdata_i;
     end
     else if (jtag_addr_valid && jtag_en_i) begin
-        regs[waddr_i] <= jtag_data_i;
+        regs[jtag_addr_i] <= jtag_data_i;
     end
     else begin
         regs <= regs;

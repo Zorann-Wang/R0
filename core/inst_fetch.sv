@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module inst_fetch(
     input   wire                        clk_i,
@@ -12,7 +12,7 @@ module inst_fetch(
     output  reg  [`INST_ADDR_BUS]       inst_addr_o        // instruction address input
 );
 
-wire hold_id_en = (hold_flag_reg > HOLD_PC); // enable hold flag when hold flag is for IF or ID
+wire hold_id_en = (hold_flag_i > `HOLD_PC); // enable hold flag when hold flag is for IF or ID
 
 always_ff @(posedge clk_i) begin 
     if (!rst_n_i) begin
@@ -28,7 +28,7 @@ always_ff @(posedge clk_i) begin
     else begin
         interrupt_flag_o    <= interrupt_flag_i;
         inst_o              <= inst_i;
-        ins_addr_o          <= {ins_addr_i[31:2], {2'b0}};
+        inst_addr_o         <= {inst_addr_i[31:2], {2'b0}};
     end
 end
 

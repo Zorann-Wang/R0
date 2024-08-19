@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module core_top (
     input   wire                        clk_i,
@@ -12,6 +12,10 @@ module core_top (
     input   wire [`INST_ADDR_BUS]       rib_inst_addr_i, 
 
     // rib
+    input   wire                        jtag_en_i,
+    input   wire [`REG_ADDR_BUS]        jtag_addr_i,
+    input   wire [`REG_DATA_BUS]        jtag_data_i,
+    output  wire [`REG_DATA_BUS]        jtag_data_o,
     input   wire [`INT_BUS]             int_flag_i,
     input   wire [`MEM_DATA_BUS]        mem_rdata_i,
     output  wire                        mem_rib_rreq_o,
@@ -20,6 +24,9 @@ module core_top (
     output  wire                        mem_wen_o, 
     output  wire [`MEM_ADDR_BUS]        mem_waddr_o,
     output  wire [`MEM_DATA_BUS]        mem_wdata_o,
+    input   wire                        rib_hold_flag_i,                
+    input   wire                        jtag_halt_flag_i,             
+    input   wire                        jtag_reset_flag_i
 );
 
 // pc_reg
@@ -27,10 +34,8 @@ wire [`HOLD_BUS]            hold_flag_ctrl;
 wire                        jump_flag_ctrl;
 wire [`INST_ADDR_BUS]       jump_addr_ctrl;
 
-// inst_fetch
-wire [`HOLD_BUS]            hold_flag_ctrl;       
-
-wire [`INT_BUS]             int_flag_id;  
+// inst_fetch      
+wire [`INT_BUS]             int_flag_if;  
 wire [`INST_DATA_BUS]       inst_if;         
 wire [`INST_ADDR_BUS]       inst_addr_if;      
 
@@ -48,8 +53,7 @@ wire [`INST_DATA_BUS]       inst_id;
 wire [`INST_ADDR_BUS]       inst_addr_id;        
 wire                        reg_wen_id;             
 wire [`REG_ADDR_BUS]        reg_waddr_id;    
-wire                        csr_wen_id;        
-wire [`CSR_DATA_BUS]        csr_rdata_id;      
+wire                        csr_wen_id;             
 wire [`CSR_ADDR_BUS]        csr_waddr_id;
 wire                        mem_rd_flag_id;
 
@@ -72,7 +76,6 @@ wire [`REG_DATA_BUS]        reg_wdata_ie;
 wire                        csr_wen_ie;
 wire [`CSR_ADDR_BUS]        csr_waddr_ie;
 wire [`CSR_DATA_BUS]        csr_wdata_ie;
-
 wire                        jump_flag_ie;
 wire [`INST_ADDR_BUS]       jump_addr_ie;
 wire [`REG_DATA_BUS]        alu_data;     
@@ -80,12 +83,25 @@ wire [`REG_DATA_BUS]        alu_data1_ie;
 wire [`REG_DATA_BUS]        alu_data2_ie;
 wire [3:0]                  alu_op_ie;
 
+// clint
+wire [`CSR_DATA_BUS]        clint_rdata;
+wire [`CSR_ADDR_BUS]        clint_raddr;
+wire                        clint_wen;
+wire [`CSR_ADDR_BUS]        clint_waddr;
+wire [`CSR_DATA_BUS]        clint_wdata;
+
+// csr
+wire [`CSR_DATA_BUS]        csr_mtvec;
+wire [`CSR_DATA_BUS]        csr_mepc;
+wire [`CSR_DATA_BUS]        csr_mstatus;
+
 pc_reg          u_pc_reg (
     .clk_i                  (clk_i),
     .rst_n_i                (rst_n_i),
     .hold_flag_i            (hold_flag_ctrl),
     .jump_flag_i            (jump_flag_ctrl),
     .jump_addr_i            (jump_addr_ctrl),
+    .jtag_reset_flag_i      (jtag_reset_flag_i),
     .pc_addr_o              (pc_addr_o)
 );
 
@@ -94,7 +110,7 @@ inst_fetch      u_if(
     .rst_n_i                (rst_n_i),
     .hold_flag_i            (hold_flag_ctrl),       
     .interrupt_flag_i       (int_flag_i),  
-    .interrupt_flag_o       (int_flag_id),  
+    .interrupt_flag_o       (int_flag_if),  
     .inst_i                 (rib_inst_i),            
     .inst_addr_i            (rib_inst_addr_i),       
     .inst_o                 (inst_if),            
@@ -171,12 +187,12 @@ inst_execute    u_ie(
     .csr_waddr_i            (csr_waddr_id_to_ex),    
 
     .reg_wen_o              (reg_wen_ie),
-    .reg_waddr_o            (reg_wdata_ie),
+    .reg_waddr_o            (reg_waddr_ie),
     .reg_wdata_o            (reg_wdata_ie),
 
     .csr_wen_o              (csr_wen_ie),
     .csr_waddr_o            (csr_waddr_ie),
-    .csr_wdata_o            (csr_waddr_ie),
+    .csr_wdata_o            (csr_wdata_ie),
     
     .mem_rdata_i            (mem_rdata_i),
     .mem_rib_rreq_o         (mem_rib_rreq_o),
@@ -188,6 +204,8 @@ inst_execute    u_ie(
 
     .jump_flag_o            (jump_flag_ie),
     .jump_addr_o            (jump_addr_ie),
+    .int_flag_i             (int_flag_clint),
+    .int_addr_i             (int_addr_clint),
 
     .alu_data_i             (alu_data),     
     .alu_data1_o            (alu_data1_ie),
@@ -210,10 +228,10 @@ gp_reg          u_gp_reg(
     .reg_waddr_i            (reg_waddr_ie),
     .reg_wdata_i            (reg_wdata_ie),
 
-    .jtag_en_i              (),
-    .jtag_addr_i            (),
-    .jtag_data_i            (),
-    .jtag_data_o            (),
+    .jtag_en_i              (jtag_en_i),
+    .jtag_addr_i            (jtag_addr_i),
+    .jtag_data_i            (jtag_data_i),
+    .jtag_data_o            (jtag_data_o),
 
     .reg1_raddr_i           (reg1_raddr_id),
     .reg1_rdata_o           (reg1_rdata_id),
@@ -231,53 +249,53 @@ csr_reg         u_csr_reg(
     .csr_wdata_i            (csr_wdata_ie),
     .csr_rdata_o            (csr_rdata_id),
 
-    .clint_wen_i            (),        
-    .clint_raddr_i          (),      
-    .clint_waddr_i          (), 
-    .clint_wdata_i          (),
-    .clint_rdata_o          (),
-    .clint_csr_mtvec_o      (), 
-    .clint_csr_mepc_o       (), 
-    .clint_csr_mstatus_o    ()
+    .clint_wen_i            (clint_wen),        
+    .clint_raddr_i          (clint_raddr),      
+    .clint_waddr_i          (clint_waddr), 
+    .clint_wdata_i          (clint_wdata),
+    .clint_rdata_o          (clint_rdata),
+    .clint_csr_mtvec_o      (csr_mtvec), 
+    .clint_csr_mepc_o       (csr_mepc), 
+    .clint_csr_mstatus_o    (csr_mstatus)
 );
 
-ctrl(
+ctrl            u_ctrl(
     .clk_i                  (clk_i),
     .rst_n_i                (rst_n_i),
 
-    .jump_flag_i            (),
-    .jump_addr_i            (),
-    .hold_flag_rib_i        (),
-    .jtag_flag_i            (),
-    .hold_flag_clint_i      (),
-    .jump_flag_o            (),
-    .jump_addr_o            (),
-    .hold_flag_o            ()
+    .jump_flag_i            (jump_flag_ie),
+    .jump_addr_i            (jump_addr_ie),
+    .hold_flag_rib_i        (rib_hold_flag_i),
+    .jtag_flag_i            (jtag_halt_flag_i),
+    .hold_flag_clint_i      (hold_flag_clint),
+    .jump_flag_o            (jump_flag_ctrl),
+    .jump_addr_o            (jump_addr_ctrl),
+    .hold_flag_o            (hold_flag_ctrl)
 );
 
-clint (
+clint           u_clint(
     .clk_i                  (clk_i),
     .rst_n_i                (rst_n_i),
 
-    .inst_i                 (),         
-    .inst_addr_i            (),
-    .jump_flag_o            (),
-    .jump_addr_o            (),
+    .inst_i                 (inst_id),         
+    .inst_addr_i            (inst_addr_id),
+    .jump_flag_i            (jump_flag_ie),
+    .jump_addr_i            (jump_addr_ie),
 
-    .csr_mtvec_i            (),
-    .csr_mepc_i             (),
-    .csr_mstatus_i          (),
+    .csr_mtvec_i            (csr_mtvec),
+    .csr_mepc_i             (csr_mepc),
+    .csr_mstatus_i          (csr_mstatus),
 
-    .clint_rdata_i          (),
-    .clint_raddr_o          (),
-    .clint_wen_o            (),
-    .clint_waddr_o          (),
-    .clint_wdata_o          (),
+    .clint_rdata_i          (clint_rdata),
+    .clint_raddr_o          (clint_raddr),
+    .clint_wen_o            (clint_wen),
+    .clint_waddr_o          (clint_waddr),
+    .clint_wdata_o          (clint_wdata),
 
-    .int_flag_i             (), 
+    .int_flag_i             (int_flag_if), 
     .clint_busy_o           (), 
-    .int_addr_o             (), 
-    .int_assert_o           ()
+    .int_addr_o             (int_addr_clint), 
+    .int_flag_o             (int_flag_clint)
 );
 
 endmodule

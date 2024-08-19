@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module ctrl(
     input   wire                        clk_i,

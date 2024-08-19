@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module clint (
     input   wire                        clk_i,
@@ -6,8 +6,8 @@ module clint (
 
     input   wire [`INST_DATA_BUS]       inst_i,         
     input   wire [`INST_ADDR_BUS]       inst_addr_i,
-    input   wire                        jump_flag_o,
-    input   wire [`INST_ADDR_BUS]       jump_addr_o,
+    input   wire                        jump_flag_i,
+    input   wire [`INST_ADDR_BUS]       jump_addr_i,
 
     input   wire [`CSR_DATA_BUS]        csr_mtvec_i,
     input   wire [`CSR_DATA_BUS]        csr_mepc_i,
@@ -22,7 +22,7 @@ module clint (
     input   wire [`INT_BUS]             int_flag_i, 
     output  wire                        clint_busy_o, 
     output  reg [`INST_ADDR_BUS]        int_addr_o, 
-    output  reg                         int_assert_o          
+    output  reg                         int_flag_o          
 );
 
 localparam INT_IDLE            = 3'b001;
@@ -56,8 +56,8 @@ always_comb begin
         else if (int_flag_i != `INT_NONE && csr_mstatus_i[3] == 1'b1) begin
             int_state = INT_ASYNC_ASSERT;
         end
-        else if (ins_i == `INS_MRET) begin
-                int_state = INT_MRET;
+        else if (inst_i == `INST_MRET) begin
+            int_state = INT_MRET;
         end 
         else begin
             int_state = INT_IDLE;
@@ -79,14 +79,14 @@ always_ff @( posedge clk_i ) begin
                 clint_wdata_o   <= 32'b0;
 
                 priority case (int_state)
-                    `INT_SYNC_ASSERT: begin
+                    INT_SYNC_ASSERT: begin
                         csr_state <= CSR_MEPC;
                         inst_addr <= inst_addr_i;
 
-                        if (inst_i == `INS_ECALL) begin
+                        if (inst_i == `INST_ECALL) begin
                             cause <= 32'd11;
                         end
-                        else if (inst_i == `INS_EBREAK) begin
+                        else if (inst_i == `INST_EBREAK) begin
                             cause <= 32'd3;
                         end
                         else begin
@@ -94,7 +94,7 @@ always_ff @( posedge clk_i ) begin
                         end
                     end
 
-                    `INT_ASYNC_ASSERT: begin
+                    INT_ASYNC_ASSERT: begin
                         csr_state <= CSR_MEPC;
                         inst_addr <= (jump_flag_i) ? jump_addr_i : inst_addr_i;
 
@@ -109,7 +109,7 @@ always_ff @( posedge clk_i ) begin
                         end
                     end
 
-                    `INT_MRET: begin
+                    INT_MRET: begin
                         csr_state   <= CSR_MSTATUS_MRET;
                         inst_addr   <= inst_addr;
                         cause       <= cause;
@@ -123,20 +123,20 @@ always_ff @( posedge clk_i ) begin
                 endcase
             end
             CSR_MEPC: begin
-                csr_state       <= CSR_MSTATUS;
+                csr_state       <= csr_mstatus_i;
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
                 clint_waddr_o   <= {20'h0, `CSR_MEPC};
                 clint_wdata_o   <= inst_addr;
             end
-            CSR_MSTATUS: begin
+            csr_mstatus_i: begin
                 csr_state       <= CSR_MCAUSE;
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
-                clint_waddr_o   <= {20'h0, `CSR_MSTATUS};
-                clint_wdata_o   <= {csr_mstatus[31:4], 1'b0, csr_mstatus[2:0]};
+                clint_waddr_o   <= {20'h0, `csr_mstatus_i};
+                clint_wdata_o   <= {csr_mstatus_i[31:4], 1'b0, csr_mstatus_i[2:0]};
             end
             CSR_MCAUSE: begin
                 csr_state       <= CSR_IDLE;
@@ -151,8 +151,8 @@ always_ff @( posedge clk_i ) begin
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
-                clint_waddr_o   <= {20'h0, `CSR_MSTATUS_MRET};
-                clint_wdata_o   <= {csr_mstatus[31:4], csr_mstatus[7], csr_mstatus[2:0]};
+                clint_waddr_o   <= {20'h0, `csr_mstatus_i_MRET};
+                clint_wdata_o   <= {csr_mstatus_i[31:4], csr_mstatus_i[7], csr_mstatus_i[2:0]};
             end
             default: begin
                 csr_state       <= CSR_IDLE;
@@ -168,21 +168,21 @@ end
 
 always_ff @( posedge clk_i ) begin
      if (!rst_n_i) begin
-        int_assert_o    <= 1'b0;
+        int_flag_o    <= 1'b0;
         int_addr_o      <= 32'b0;
     end 
     else begin
         case (csr_state)
             CSR_MCAUSE: begin
-                int_assert_o    <= 1'b1;
-                int_addr_o      <= csr_mtvec;
+                int_flag_o      <= 1'b1;
+                int_addr_o      <= csr_mtvec_i;
             end
             CSR_MSTATUS_MRET: begin
-                int_assert_o    <= 1'b1;
-                int_addr_o      <= csr_mepc;
+                int_flag_o      <= 1'b1;
+                int_addr_o      <= csr_mepc_i;
             end
             default: begin
-                int_assert_o    <= 1'b0;
+                int_flag_o      <= 1'b0;
                 int_addr_o      <= 32'b0;
             end
         endcase

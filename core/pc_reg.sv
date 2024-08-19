@@ -1,4 +1,4 @@
-`include "defines.v"
+`include "define.sv"
 
 module pc_reg (
     input   wire                        clk_i,
@@ -6,13 +6,14 @@ module pc_reg (
     input   wire [`HOLD_BUS]            hold_flag_i,
     input   wire                        jump_flag_i,
     input   wire [`INST_ADDR_BUS]       jump_addr_i,
+    input   wire                        jtag_reset_flag_i,
     output  reg  [`INST_ADDR_BUS]       pc_addr_o
 );
 
-wire hold_pc_en = (hold_flag_i != HOLD_NONE) ; //enable hold flag when hold flag is for PC, IF or ID
+wire hold_pc_en = (|hold_flag_i) ; //enable hold flag when hold flag is for PC, IF or ID
 
 always_ff @(posedge clk_i) begin 
-    if (!rst_n_i) begin
+    if (!rst_n_i | jtag_reset_flag_i) begin
         pc_addr_o <= `RESET_ADDR;
     end
     else if (hold_pc_en) begin

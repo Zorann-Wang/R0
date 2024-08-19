@@ -18,10 +18,16 @@
 `define INST_DATA_BUS   31:0      // width for instruction data bus
 `define INST_ADDR_BUS   31:0      // width for instruction address bus
 `define INST_NOP        32'h0013  // no operation; machine code for addi x0, x0, 0
+`define INST_MRET   		32'h30200073
+`define INST_RET    		32'h00008067
 
 `define INT_BUS         7:0       // width for interrupt bus
 `define INT_NONE        8'h0
 `define INT_TIMER       8'h1
+`define INT_UART_REV  	8'h2
+
+`define CLK_FREQ			32'd50_000_000
+`define UART_BPS			32'd115200
 
 `define CSR_ADDR_BUS    31:0
 `define CSR_DATA_BUS    31:0
