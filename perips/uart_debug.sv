@@ -1,0 +1,206 @@
+`include "../riscv_core/define.sv"
+
+module uart_debug (
+    input   wire                        clk_i,
+    input   wire                        rst_n_i,
+
+    input   wire                        debug_en_i, 
+    input   wire                        uart_rx,
+
+    output  reg                         rib_wreq_o, 
+    output  reg                         mem_wen_o, 
+    output  reg[`INST_ADDR_BUS]         mem_waddr_o, 
+    output  reg[`INST_DATA_BUS]         mem_wdata_o        
+);
+
+localparam  BAUD_CNT        = `CLK_FREQ / `UART_BPS;
+localparam  IDLE            = 4'h0x00;
+localparam  START           = 4'h0x01;
+localparam  SEND_BYTE       = 4'h0x02;
+localparam  STOP            = 4'h0x03;
+
+integer                     i;
+integer                     j;
+reg                         uart_rx_reg[0:3];
+reg                         uart_rx_reg4;
+reg                         debug_en_reg[0:3];
+reg [12:0]                  baud_cnt;  
+reg [2:0]                   byte_cnt;  
+reg [3:0]                   bit_cnt;   
+reg [3:0]                   uart_state;
+reg [3:0]                   uart_next_state;
+reg [7:0]                   byte_data;   
+reg [`INST_DATA_BUS]        wdata_reg;  
+reg                         data_rflag;  
+
+
+always_ff @( posedge clk_i ) begin 
+    uart_rx_reg[0]  <= uart_rx;
+    uart_rx_reg4    <= uart_rx_reg[3];
+    for (i = 0; i < 3; i = i + 1) begin
+        uart_rx_reg[i+1] <= uart_rx_reg[i];
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    debug_en_reg[0] <= debug_en_i;
+    for (j = 0; j < 3; j = j + 1) begin
+        debug_en_reg[j+1] <= debug_en_reg[j];
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        rib_wreq_o <= 1'b0;
+    end
+    else begin
+        rib_wreq_o <= 1'b1;
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        baud_cnt <= 13'b0;
+    end
+    else if(uart_next_state == IDLE | baud_cnt == BAUD_CNT - 1) begin
+        baud_cnt <= 13'b0;
+    end
+    else begin
+        baud_cnt <= baud_cnt + 1'b1;
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        byte_cnt    <= 3'b0;
+        data_rflag  <= 1'b0;
+    end
+    else if(byte_cnt == 3'h4) begin
+        byte_cnt    <= 3'b0;
+        data_rflag  <= 1'b1;
+    end
+    else if(uart_next_state == STOP | baud_cnt == 13'b0) begin
+        byte_cnt    <= byte_cnt + 1'b1;
+        data_rflag  <= data_rflag;
+    end
+    else begin
+        byte_cnt    <= byte_cnt;
+        data_rflag  <= 1'b0;
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        bit_cnt <= 4'b0;
+    end
+    else if(uart_next_state == SEND_BYTE & bit_cnt == 4'h7) begin
+        bit_cnt <= 4'b0;
+    end
+    else begin
+        bit_cnt <= bit_cnt + 1'b1;
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        byte_data <= 8'b0;
+    end
+    else if(uart_next_state == SEND_BYTE & baud_cnt == BAUD_CNT / 2 - 1) begin
+        byte_data <= {uart_rx_reg4, byte_data[7:1]};
+    end
+    else begin
+        byte_data <= 8'b0;
+    end
+end
+
+always_ff @( posedge clk_i ) begin 
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        wdata_reg <= 32'd0;
+    end
+    else if(uart_state == STOP & byte_cnt != 3'b0 & baud_cnt == 13'b1) begin
+        wdata_reg <= {byte_data, wdata_reg[31:8]};
+    end
+    else begin
+        wdata_reg <= wdata_reg;
+    end
+end
+
+always_ff @ ( posedge clk_i ) begin
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        mem_wen_o       <= 1'b0;
+        mem_wdata_o     <= 32'd0;
+    end
+    else if(data_rflag) begin
+        mem_wen_o       <= 1'b0;
+        mem_wdata_o     <= wdata_reg;
+    end
+    else begin
+        mem_wen_o       <= 1'b0;
+        mem_wdata_o     <= mem_wdata_o;
+    end            
+end
+
+always_ff @ ( posedge clk_i ) begin
+    if(!rst_n_i | !debug_en_reg[3]) begin 
+        mem_waddr_o     <= 32'd0;
+    end
+    else if(mem_wen_o) begin
+        mem_waddr_o     <= mem_waddr_o + 3'h4;
+    end
+    else begin
+        mem_waddr_o     <= mem_waddr_o;
+    end            
+end
+
+always_ff @( posedge clk_i ) begin 
+     if (!rst_n_i)
+        uart_state <= IDLE;
+    else
+        uart_state <= uart_next_state;
+end
+
+always_comb begin
+    priority case (uart_next_state)
+        IDLE: begin
+            if (uart_rx_reg4 & uart_rx_reg[3]) begin
+                uart_next_state = START;
+            end
+            else begin
+                uart_next_state = IDLE;
+            end
+        end 
+
+        START: begin
+            if(baud_cnt == BAUD_CNT - 1) begin
+                uart_next_state = SEND_BYTE; 
+            end
+            else begin
+                uart_next_state = START;
+            end
+        end
+
+        SEND_BYTE: begin
+            if(bit_cnt == 4'h7 & baud_cnt == BAUD_CNT - 1) begin
+                uart_next_state = STOP; 
+            end
+            else begin
+                uart_next_state = SEND_BYTE;
+            end
+        end
+
+        STOP: begin
+            if(baud_cnt == 2'h2) begin
+                uart_next_state = IDLE; 
+            end
+            else begin
+                uart_next_state = STOP;
+            end
+        end
+
+        default: begin
+            uart_next_state = IDLE;
+        end
+    endcase
+end
+
+endmodule

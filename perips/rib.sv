@@ -1,0 +1,530 @@
+`include "../riscv_core/define.sv"
+
+module rib (
+    input   wire                        clk_i,
+    input   wire                        rst_n_i,
+
+    // master 0 -- mem
+    input   wire                        m0_wreq_i, 
+    input   wire                        m0_wen_i, 
+    input   wire [`INST_ADDR_BUS]       m0_waddr_i,
+    input   wire [`INST_DATA_BUS]       m0_wdata_i, 
+    input   wire                        m0_rreq_i, 
+    input   wire [`INST_ADDR_BUS]       m0_raddr_i, 
+    output  reg  [`INST_DATA_BUS]       m0_rdata_o, 
+    
+    // master 1 -- uart_debug
+    input   wire                        m1_wreq_i, 
+    input   wire                        m1_wen_i, 
+    input   wire [`INST_ADDR_BUS]       m1_waddr_i,
+    input   wire [`INST_DATA_BUS]       m1_wdata_i, 
+    input   wire                        m1_rreq_i, 
+    input   wire [`INST_ADDR_BUS]       m1_raddr_i, 
+    output  reg  [`INST_DATA_BUS]       m1_rdata_o, 
+
+    // slave 0 -- rom
+    input   wire [`INST_DATA_BUS]       s0_rdata_i, 
+    output  reg  [`INST_ADDR_BUS]       s0_raddr_o,
+    output  reg                         s0_wen_o, 
+    output  reg  [`INST_ADDR_BUS]       s0_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       s0_wdata_o, 
+     
+    // slave 1 -- ram
+    input   wire [`INST_DATA_BUS]       s1_rdata_i, 
+    output  reg  [`INST_ADDR_BUS]       s1_raddr_o,
+    output  reg                         s1_wen_o, 
+    output  reg  [`INST_ADDR_BUS]       s1_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       s1_wdata_o,  
+    
+    // slave 2 -- uart
+    input   wire [`INST_DATA_BUS]       s2_rdata_i, 
+    output  reg  [`INST_ADDR_BUS]       s2_raddr_o,
+    output  reg                         s2_wen_o, 
+    output  reg  [`INST_ADDR_BUS]       s2_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       s2_wdata_o, 
+
+    // slave 3 -- gpio
+    input   wire [`INST_DATA_BUS]       s3_rdata_i, 
+    output  reg  [`INST_ADDR_BUS]       s3_raddr_o,
+    output  reg                         s3_wen_o, 
+    output  reg  [`INST_ADDR_BUS]       s3_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       s3_wdata_o,  
+
+    // slave 4 -- timer
+    input   wire [`INST_DATA_BUS]       s4_rdata_i, 
+    output  reg  [`INST_ADDR_BUS]       s4_raddr_o,
+    output  reg                         s4_wen_o, 
+    output  reg  [`INST_ADDR_BUS]       s4_waddr_o, 
+    output  reg  [`INST_DATA_BUS]       s4_wdata_o,  
+    
+    output  reg                         hold_flag_rib_o 
+);
+
+parameter[1:0]  master_0    = 2'b00;    // mem
+parameter[1:0]  master_1    = 2'b01;    // uart_debug
+parameter[3:0]  slave_0     = 4'b0000;  // 0x0000_0000 ~ 0x0fff_ffff [rom]
+parameter[3:0]  slave_1     = 4'b0001;  // 0x1000_0000 ~ 0x1fff_ffff [ram]
+parameter[3:0]  slave_2     = 4'b0010;  // 0x2000_0000 ~ 0x2fff_ffff [uart]
+parameter[3:0]  slave_3     = 4'b0011;  // 0x3000_0000 ~ 0x3fff_ffff [gpio]
+parameter[3:0]  slave_4     = 4'b0100;  // 0x3000_0000 ~ 0x3fff_ffff [timer]
+
+reg [1:0]                      grant_wr;
+reg [1:0]                      grant_rd;
+reg [`INST_ADDR_BUS]           m0_raddr_reg;
+reg [`INST_ADDR_BUS]           m1_raddr_reg;
+
+always_ff @( posedge clk_i ) begin 
+    m0_raddr_reg <= m0_raddr_i;
+    m1_raddr_reg <= m1_raddr_i;
+end
+
+always_comb begin
+    grant_rd                = master_0;
+
+    if (m1_wreq_i) begin
+        grant_wr            = master_1;
+        hold_flag_rib_o     = 1'b1;
+    end
+    /*
+    else if (m0_wreq_i) begin
+        grant_wr            = master_0;
+        hold_flag_rib_o     = 1'b0;
+    end
+    */
+    else begin
+        grant_wr            = master_0;
+        hold_flag_rib_o     = 1'b0;
+    end
+end
+
+always_comb begin
+    priority case (grant_wr)
+        master_0: begin
+            priority case (m0_waddr_i[31:28])
+                slave_0: begin
+                    s0_wen_o    = m0_wen_i;  
+                    s0_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s0_wdata_o  = m0_wdata_i;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_1: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = m0_wen_i;  
+                    s1_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s1_wdata_o  = m0_wdata_i;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_2: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = m0_wen_i;  
+                    s2_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s2_wdata_o  = m0_wdata_i;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_3: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = m0_wen_i;  
+                    s3_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s3_wdata_o  = m0_wdata_i;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_4: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = m0_wen_i;  
+                    s4_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s4_wdata_o  = m0_wdata_i;
+                end
+
+                default: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+            endcase
+        end
+
+        master_1: begin
+            priority case (m0_waddr_i[31:28])
+                slave_0: begin
+                    s0_wen_o    = m0_wen_i;  
+                    s0_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s0_wdata_o  = m0_wdata_i;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_1: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = m0_wen_i;  
+                    s1_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s1_wdata_o  = m0_wdata_i;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_2: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = m0_wen_i;  
+                    s2_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s2_wdata_o  = m0_wdata_i;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_3: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = m0_wen_i;  
+                    s3_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s3_wdata_o  = m0_wdata_i;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+
+                slave_4: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = m0_wen_i;  
+                    s4_waddr_o  = {{4'b0}, m0_waddr_i[27:0]};
+                    s4_wdata_o  = m0_wdata_i;
+                end
+
+                default: begin
+                    s0_wen_o    = 1'b0;  
+                    s0_waddr_o  = 32'b0;
+                    s0_wdata_o  = 32'b0;
+                    s1_wen_o    = 1'b0;  
+                    s1_waddr_o  = 32'b0;
+                    s1_wdata_o  = 32'b0;
+                    s2_wen_o    = 1'b0;  
+                    s2_waddr_o  = 32'b0;
+                    s2_wdata_o  = 32'b0;
+                    s3_wen_o    = 1'b0;  
+                    s3_waddr_o  = 32'b0;
+                    s3_wdata_o  = 32'b0;
+                    s4_wen_o    = 1'b0;  
+                    s4_waddr_o  = 32'b0;
+                    s4_wdata_o  = 32'b0;
+                end
+            endcase
+        end
+
+        default: begin
+            s0_wen_o    = 1'b0;  
+            s0_waddr_o  = 32'b0;
+            s0_wdata_o  = 32'b0;
+            s1_wen_o    = 1'b0;  
+            s1_waddr_o  = 32'b0;
+            s1_wdata_o  = 32'b0;
+            s2_wen_o    = 1'b0;  
+            s2_waddr_o  = 32'b0;
+            s2_wdata_o  = 32'b0;
+            s3_wen_o    = 1'b0;  
+            s3_waddr_o  = 32'b0;
+            s3_wdata_o  = 32'b0;
+            s4_wen_o    = 1'b0;  
+            s4_waddr_o  = 32'b0;
+            s4_wdata_o  = 32'b0;
+        end
+    endcase
+end
+
+always_comb begin
+    priority case (grant_rd)
+        master_0: begin
+            priority case (m0_raddr_i[31:28])
+                slave_0: begin
+                    s0_raddr_o  = {{4'd0}, m0_raddr_i[27:0]};
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_1: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = {{4'd0}, m0_raddr_i[27:0]};
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_2: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = {{4'd0}, m0_raddr_i[27:0]};
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_3: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = {{4'd0}, m0_raddr_i[27:0]};
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_4: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = {{4'd0}, m0_raddr_i[27:0]};
+                end
+
+                default: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+            endcase
+        end
+
+        master_1: begin
+            priority case (m1_raddr_i[31:28])
+                slave_0: begin
+                    s0_raddr_o  = {{4'd0}, m1_raddr_i[27:0]};
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_1: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = {{4'd0}, m1_raddr_i[27:0]};
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_2: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = {{4'd0}, m1_raddr_i[27:0]};
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_3: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = {{4'd0}, m1_raddr_i[27:0]};
+                    s4_raddr_o  = 32'b0;
+                end
+
+                slave_4: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = {{4'd0}, m1_raddr_i[27:0]};
+                end
+
+                default: begin
+                    s0_raddr_o  = 32'b0;
+                    s1_raddr_o  = 32'b0;
+                    s2_raddr_o  = 32'b0;
+                    s3_raddr_o  = 32'b0;
+                    s4_raddr_o  = 32'b0;
+                end
+            endcase
+        end
+
+        default: begin
+            s0_raddr_o  = 32'b0;
+            s1_raddr_o  = 32'b0;
+            s2_raddr_o  = 32'b0;
+            s3_raddr_o  = 32'b0;
+            s4_raddr_o  = 32'b0;
+        end
+    endcase
+end
+
+always_comb begin
+    priority case (grant_rd)
+        master_0: begin
+            m1_rdata_o  = 32'b0;
+            priority case (m0_raddr_reg[31:28])
+                slave_0: begin
+                    m0_rdata_o  = s0_rdata_i;
+                end
+
+                slave_1: begin
+                    m0_rdata_o  = s1_rdata_i;
+                end
+
+                slave_2: begin
+                    m0_rdata_o  = s2_rdata_i;
+                end
+
+                slave_3: begin
+                    m0_rdata_o  = s3_rdata_i;
+                end
+
+                slave_4: begin
+                    m0_rdata_o  = s4_rdata_i;
+                end
+
+                default: begin
+                    m0_rdata_o  = 32'b0;
+                end
+            endcase
+        end
+
+        master_1: begin
+            m0_rdata_o  = 32'b0;
+            priority case (m1_raddr_reg[31:28])
+                slave_0: begin
+                    m1_rdata_o  = s0_rdata_i;
+                end
+
+                slave_1: begin
+                    m1_rdata_o  = s1_rdata_i;
+                end
+
+                slave_2: begin
+                    m1_rdata_o  = s2_rdata_i;
+                end
+
+                slave_3: begin
+                    m1_rdata_o  = s3_rdata_i;
+                end
+
+                slave_4: begin
+                    m1_rdata_o  = s4_rdata_i;
+                end
+
+                default: begin
+                    m1_rdata_o  = 32'b0;
+                end
+            endcase
+        end
+
+        default: begin
+            m0_rdata_o  = 32'b0;
+            m1_rdata_o  = 32'b0;
+        end
+    endcase
+end
+
+
+endmodule
