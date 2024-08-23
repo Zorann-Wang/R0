@@ -32,12 +32,12 @@ module inst_decode(
 );
     
 // 32-bit instructions info
-wire [6:0]  func7;
-wire [4:0]  rs2;
-wire [4:0]  rs1;
-wire [2:0]  func3;
-wire [4:0]  rd;
-wire [6:0]  opcode;
+logic [6:0]  func7;
+logic [4:0]  rs2;
+logic [4:0]  rs1;
+logic [2:0]  func3;
+logic [4:0]  rd;
+logic [6:0]  opcode;
 
 always_comb begin 
     func7   = inst_i [31:25];

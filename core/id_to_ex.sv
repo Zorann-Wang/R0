@@ -1,10 +1,10 @@
 `include "define.sv"
 
 module id_to_ex(
-    input   wire                        clk_i,
-    input   wire                        rst_n_i,
+    input   logic                        clk_i,
+    input   logic                        rst_n_i,
     
-    input   wire [`HOLD_BUS]            hold_flag_i,                        
+    input   logic [`HOLD_BUS]            hold_flag_i,                        
 
     // from ID   
     input   reg  [`REG_DATA_BUS]        op1_i,
@@ -31,7 +31,7 @@ module id_to_ex(
     output  reg  [`CSR_ADDR_BUS]        csr_waddr_o
 );
 
-wire hold_en;
+logic hold_en;
 
 always_comb begin
     if (hold_flag_i >= `HOLD_ID_EX) begin
@@ -44,40 +44,40 @@ end
 
 always_ff @( posedge clk_i ) begin 
     if (rst_n_i) begin
-        inst_o          = `INST_NOP;
-        inst_addr_o     = 32'b0;
-        reg_wen_o       = 1'b0;
-        reg_waddr_o     = 5'b0;
-        op1_o           = 32'b0;
-        op2_o           = 32'b0;
-        offset_o        = 32'b0;
-        csr_wen_o       = 1'b0;
-        csr_waddr_o     = 32'b0;
-        csr_rdata_o     = 32'b0;
+        inst_o          <= `INST_NOP;
+        inst_addr_o     <= 32'b0;
+        reg_wen_o       <= 1'b0;
+        reg_waddr_o     <= 5'b0;
+        op1_o           <= 32'b0;
+        op2_o           <= 32'b0;
+        offset_o        <= 32'b0;
+        csr_wen_o       <= 1'b0;
+        csr_waddr_o     <= 32'b0;
+        csr_rdata_o     <= 32'b0;
     end
     else if (hold_en) begin
-        inst_o          = `INST_NOP;
-        inst_addr_o     = 32'b0;
-        reg_wen_o       = 1'b0;
-        reg_waddr_o     = 5'b0;
-        op1_o           = 32'b0;
-        op2_o           = 32'b0;
-        offset_o        = 32'b0;
-        csr_wen_o       = 1'b0;
-        csr_waddr_o     = 32'b0;
-        csr_rdata_o     = 32'b0;
+        inst_o          <= `INST_NOP;
+        inst_addr_o     <= 32'b0;
+        reg_wen_o       <= 1'b0;
+        reg_waddr_o     <= 5'b0;
+        op1_o           <= 32'b0;
+        op2_o           <= 32'b0;
+        offset_o        <= 32'b0;
+        csr_wen_o       <= 1'b0;
+        csr_waddr_o     <= 32'b0;
+        csr_rdata_o     <= 32'b0;
     end
     else begin
-        inst_o          = inst_i;
-        inst_addr_o     = inst_addr_i;
-        reg_wen_o       = reg_wen_i;
-        reg_waddr_o     = reg_waddr_i;
-        op1_o           = op1_i;
-        op2_o           = op2_i;
-        offset_o        = offset_i;
-        csr_wen_o       = csr_wen_i;
-        csr_waddr_o     = csr_waddr_i;
-        csr_rdata_o     = csr_rdata_i;
+        inst_o          <= inst_i;
+        inst_addr_o     <= inst_addr_i;
+        reg_wen_o       <= reg_wen_i;
+        reg_waddr_o     <= reg_waddr_i;
+        op1_o           <= op1_i;
+        op2_o           <= op2_i;
+        offset_o        <= offset_i;
+        csr_wen_o       <= csr_wen_i;
+        csr_waddr_o     <= csr_waddr_i;
+        csr_rdata_o     <= csr_rdata_i;
     end
 end
 

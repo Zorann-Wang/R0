@@ -17,9 +17,9 @@ module csr_reg (
     input   wire [`CSR_ADDR_BUS]        clint_waddr_i, 
     input   wire [`CSR_DATA_BUS]        clint_wdata_i,
     output  reg  [`CSR_DATA_BUS]        clint_rdata_o,
-    output  wire [`CSR_DATA_BUS]        clint_csr_mtvec_o, 
-    output  wire [`CSR_DATA_BUS]        clint_csr_mepc_o, 
-    output  wire [`CSR_DATA_BUS]        clint_csr_mstatus_o
+    output  logic[`CSR_DATA_BUS]        clint_csr_mtvec_o, 
+    output  logic[`CSR_DATA_BUS]        clint_csr_mepc_o, 
+    output  logic[`CSR_DATA_BUS]        clint_csr_mstatus_o
 );
 
 reg     [63:0]              cycle;
@@ -29,8 +29,8 @@ reg     [`CSR_DATA_BUS]     mepc;
 reg     [`CSR_DATA_BUS]     mie;
 reg     [`CSR_DATA_BUS]     mstatus;
 reg     [`CSR_DATA_BUS]     mscratch;
-wire                        csr_wr_same_addr;
-wire                        clint_wr_same_addr;
+logic                       csr_wr_same_addr;
+logic                       clint_wr_same_addr;
 
 always_comb begin 
     csr_wr_same_addr    = ((csr_waddr_i[11:0] == csr_raddr_i[11:0]) && (csr_wen_i == 1'b1)) ? 1'b1 : 1'b0;
@@ -219,7 +219,7 @@ always_comb begin
         clint_rdata_o = clint_wdata_i;
     end
     else begin
-        priority case (csr_raddr_i[11:0])
+        priority case (clint_raddr_i[11:0])
             `CSR_CYCLE: begin
                 clint_rdata_o = cycle[31:0];
             end

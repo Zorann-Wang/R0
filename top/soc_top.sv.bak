@@ -1,0 +1,112 @@
+`include "../riscv_core/define.sv"
+
+module soc_top (
+    input   wire                        clk_i,
+    input   wire                        rst_n_i,
+
+    input   wire                        uart_debug,
+    input   wire                        uart_rx,
+    output  wire                        uart_tx,
+
+    output  wire [3:0]                  gpio_pins
+);
+
+wire [`INST_ADDR_BUS]       core_pc;
+wire                        core_mem_wreq;
+wire                        core_mem_wen;
+wire [`INST_ADDR_BUS]       core_mem_waddr;
+wire [`INST_DATA_BUS]       core_mem_wdata;
+wire                        core_mem_rreq;
+wire [`INST_ADDR_BUS]       core_mem_raddr;
+
+wire                        uart_mem_wreq;
+wire                        uart_mem_wen;  
+wire [`INST_ADDR_BUS]       uart_mem_waddr; 
+wire [`INST_DATA_BUS]       uart_mem_wdata; 
+
+wire                        rom_wen;  
+wire [`INST_ADDR_BUS]       rom_waddr;  
+wire [`INST_DATA_BUS]       rom_wdata; 
+wire [`INST_ADDR_BUS]       rom_raddr;  
+wire [`INST_DATA_BUS]       rom_rdata; 
+
+wire [`INST_ADDR_BUS]       rom_pc; 
+wire [`INST_DATA_BUS]       rom_inst;
+
+rib         u_rib(
+    .clk_i              (clk_i),
+    .rst_n_i            (rst_n_i),
+
+    .m0_wreq_i          (core_mem_wreq), 
+    .m0_wen_i           (core_mem_wen), 
+    .m0_waddr_i         (core_mem_waddr),
+    .m0_wdata_i         (core_mem_wdata), 
+    .m0_rreq_i          (core_mem_rreq), 
+    .m0_raddr_i         (core_mem_raddr), 
+    .m0_rdata_o         (core_mem_rdata), 
+    
+    .m1_wreq_i          (uart_mem_wreq), 
+    .m1_wen_i           (uart_mem_wen), 
+    .m1_waddr_i         (uart_mem_waddr),
+    .m1_wdata_i         (uart_mem_wdata), 
+    .m1_rreq_i          (), 
+    .m1_raddr_i         (), 
+    .m1_rdata_o         (), 
+
+    .s0_rdata_i         (rom_rdata), 
+    .s0_raddr_o         (rom_raddr),
+    .s0_wen_o           (rom_wen), 
+    .s0_waddr_o         (rom_waddr), 
+    .s0_wdata_o         (rom_wdata), 
+     
+    .s1_rdata_i, 
+    .s1_raddr_o,
+    .s1_wen_o, 
+    .s1_waddr_o, 
+    .s1_wdata_o,  
+    
+    .s2_rdata_i, 
+    .s2_raddr_o,
+    .s2_wen_o, 
+    .s2_waddr_o, 
+    .s2_wdata_o, 
+
+    .s3_rdata_i, 
+    .s3_raddr_o,
+    .s3_wen_o, 
+    .s3_waddr_o, 
+    .s3_wdata_o,  
+    
+    .hold_flag_rib_o 
+);
+
+uart_debug  u_debug(
+    .clk_i              (clk_i),
+    .rst_n_i            (rst_n_i),
+
+    .debug_en_i         (~uart_debug_pin), 
+    .uart_rx            (uart_rx),
+
+    .rib_wr_req_o       (uart_mem_wreq), 
+    .mem_wr_en_o        (uart_mem_wen), 
+    .mem_wr_addr_o      (uart_mem_waddr), 
+    .mem_wr_data_o      (uart_mem_wdata)        
+);
+
+rom         u_rom(
+    .clk_i              (clk_i),
+    .rst_n_i            (rst_n_i),
+    
+    .wr_en_i            (rom_wen),    
+    .wr_addr_i          (rom_waddr),  
+    .wr_data_i          (rom_wdata),  
+    
+    .rd_addr_i          (rom_raddr),  
+    .rd_data_o          (rom_rdata),  
+    
+    .pc_addr_i          (rom_pc),  
+    .inst_o             (rom_inst)     
+);
+
+
+endmodule

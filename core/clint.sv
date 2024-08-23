@@ -20,7 +20,7 @@ module clint (
     output  reg  [`CSR_DATA_BUS]        clint_wdata_o,
 
     input   wire [`INT_BUS]             int_flag_i, 
-    output  wire                        clint_busy_o, 
+    output  logic                       clint_busy_o, 
     output  reg [`INST_ADDR_BUS]        int_addr_o, 
     output  reg                         int_flag_o          
 );
@@ -123,19 +123,19 @@ always_ff @( posedge clk_i ) begin
                 endcase
             end
             CSR_MEPC: begin
-                csr_state       <= csr_mstatus_i;
+                csr_state       <= CSR_MSTATUS_MRET;
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
                 clint_waddr_o   <= {20'h0, `CSR_MEPC};
                 clint_wdata_o   <= inst_addr;
             end
-            csr_mstatus_i: begin
+            CSR_MSTATUS: begin
                 csr_state       <= CSR_MCAUSE;
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
-                clint_waddr_o   <= {20'h0, `csr_mstatus_i};
+                clint_waddr_o   <= {20'h0, `CSR_MSTATUS};
                 clint_wdata_o   <= {csr_mstatus_i[31:4], 1'b0, csr_mstatus_i[2:0]};
             end
             CSR_MCAUSE: begin
@@ -151,7 +151,7 @@ always_ff @( posedge clk_i ) begin
                 inst_addr       <= inst_addr;
                 cause           <= cause;
                 clint_wen_o     <= 1'b1;
-                clint_waddr_o   <= {20'h0, `csr_mstatus_i_MRET};
+                clint_waddr_o   <= {20'h0, `CSR_MSTATUS};
                 clint_wdata_o   <= {csr_mstatus_i[31:4], csr_mstatus_i[7], csr_mstatus_i[2:0]};
             end
             default: begin

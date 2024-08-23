@@ -10,7 +10,7 @@ module gpio(
     input   wire [`INST_ADDR_BUS]       raddr_i, 
     output  reg  [`INST_DATA_BUS]       rdata_o, 
     
-    output  wire [3:0]                  gpio_pins          
+    output  logic[3:0]                  gpio_pins          
 );
 
 localparam GPIO_CTRL = 4'h0;

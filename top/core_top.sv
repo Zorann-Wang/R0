@@ -45,6 +45,7 @@ wire [`REG_ADDR_BUS]        reg1_raddr_id;
 wire [`REG_DATA_BUS]        reg2_rdata_id;
 wire [`REG_ADDR_BUS]        reg2_raddr_id;
 wire [`CSR_DATA_BUS]        csr_rdata_id;
+wire [`CSR_DATA_BUS]        csr_rdata_id_reg;
 wire [`CSR_ADDR_BUS]        csr_raddr_id;
 wire [`REG_DATA_BUS]        op1_id;
 wire [`REG_DATA_BUS]        op2_id;
@@ -95,6 +96,10 @@ wire [`CSR_DATA_BUS]        csr_mtvec;
 wire [`CSR_DATA_BUS]        csr_mepc;
 wire [`CSR_DATA_BUS]        csr_mstatus;
 
+// interrupt
+wire                        int_flag_clint;
+wire [`INST_ADDR_BUS]       int_addr_clint;
+
 pc_reg          u_pc_reg (
     .clk_i                  (clk_i),
     .rst_n_i                (rst_n_i),
@@ -139,7 +144,7 @@ inst_decode     u_id(
     .reg_wen_o              (reg_wen_id),             
     .reg_waddr_o            (reg_waddr_id),    
     .csr_wen_o              (csr_wen_id),        
-    .csr_rdata_o            (csr_rdata_id),      
+    .csr_rdata_o            (csr_rdata_id_reg),      
     .csr_waddr_o            (csr_waddr_id)
 );
 
@@ -156,7 +161,7 @@ id_to_ex        u_id_to_ex(
     .reg_wen_i              (reg_wen_id),             
     .reg_waddr_i            (reg_waddr_id),    
     .csr_wen_i              (csr_wen_id),        
-    .csr_rdata_i            (csr_rdata_id),      
+    .csr_rdata_i            (csr_rdata_id_reg),      
     .csr_waddr_i            (csr_waddr_id),   
     
     .op1_o                  (op1_id_to_ex),

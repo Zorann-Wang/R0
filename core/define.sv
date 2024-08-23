@@ -4,6 +4,7 @@
 `define REG_DATA_BUS    31:0
 
 `define ROM_DEPTH       4096  // rom depth(how many words)
+`define RAM_DEPTH       4096  // ram depth(how many words)
 
 `define MEM_DEPTH       4096  // memory depth(how many words)
 `define MEM_DATA_BUS    31:0

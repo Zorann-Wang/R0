@@ -18,6 +18,7 @@ wire [`INST_ADDR_BUS]       core_mem_waddr;
 wire [`INST_DATA_BUS]       core_mem_wdata;
 wire                        core_mem_rreq;
 wire [`INST_ADDR_BUS]       core_mem_raddr;
+wire [`INST_DATA_BUS]       core_mem_rdata;
 
 wire                        uart_mem_wreq;
 wire                        uart_mem_wen;  
@@ -31,6 +32,7 @@ wire [`INST_ADDR_BUS]       rom_raddr;
 wire [`INST_DATA_BUS]       rom_rdata; 
 wire [`INST_ADDR_BUS]       rom_pc; 
 wire [`INST_DATA_BUS]       rom_inst;
+wire [`INST_ADDR_BUS]       rom_inst_addr; 
 
 wire                        ram_wen;  
 wire [`INST_ADDR_BUS]       ram_waddr;  
@@ -57,7 +59,7 @@ wire [`INST_ADDR_BUS]       timer_raddr;
 wire [`INST_DATA_BUS]       timer_rdata; 
 wire                        timer_int_flag;
 
-wire [`INT_BUS]             int_flag;
+logic[`INT_BUS]             int_flag;
 
 always_comb begin
     int_flag = {7'h0,  timer_int_flag};
@@ -122,7 +124,7 @@ core_top    u_core(
 
     .pc_addr_o          (rom_pc),
     .rib_inst_i         (rom_inst),           
-    .rib_inst_addr_i    (rom), 
+    .rib_inst_addr_i    (rom_inst_addr), 
 
     .jtag_en_i          (),
     .jtag_addr_i        (),
@@ -166,7 +168,8 @@ rom         u_rom(
     .rdata_o            (rom_rdata),  
     
     .pc_addr_i          (rom_pc),  
-    .inst_o             (rom_inst)     
+    .inst_o             (rom_inst),
+    .inst_addr_o        (rom_inst_addr)     
 );
 
 ram         u_ram(

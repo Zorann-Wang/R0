@@ -12,6 +12,7 @@ module rom (
     output  reg  [`INST_DATA_BUS]       rdata_o,  // read data
     
     input   wire [`INST_ADDR_BUS]       pc_addr_i,  // instruction read address
+    output  reg  [`INST_ADDR_BUS]       inst_addr_o,
     output  reg  [`INST_DATA_BUS]       inst_o      // instruction
 );
 
@@ -37,10 +38,12 @@ always_comb begin
     if (!rst_n_i) begin
         rdata_o     = 32'b0;
         inst_o      = 32'b0;
+        inst_addr_o = 32'b0;
     end
     else begin
         rdata_o     = _rom[rd_addr_reg[31:2]];
         inst_o      = _rom[pc_addr_reg[31:2]];
+        inst_addr_o = pc_addr_reg;
     end
 end
     

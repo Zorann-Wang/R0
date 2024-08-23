@@ -11,7 +11,7 @@ module gp_reg (
     input   wire                     jtag_en_i,
     input   wire [`REG_ADDR_BUS]     jtag_addr_i,
     input   wire [`REG_DATA_BUS]     jtag_data_i,
-    output  wire [`REG_DATA_BUS]     jtag_data_o,
+    output  logic[`REG_DATA_BUS]     jtag_data_o,
 
     input   wire [`REG_ADDR_BUS]     reg1_raddr_i,
     output  reg  [`REG_DATA_BUS]     reg1_rdata_o,
@@ -21,12 +21,12 @@ module gp_reg (
 
 integer                 i;
 reg     [`REG_DATA_BUS] regs [0:31];
-wire                    reg_waddr_valid;
-wire                    jtag_addr_valid;
-wire                    reg1_raddr_valid;
-wire                    reg2_raddr_valid;
-wire                    reg1_addr_same;
-wire                    reg2_addr_same;
+logic                   reg_waddr_valid;
+logic                   jtag_addr_valid;
+logic                   reg1_raddr_valid;
+logic                   reg2_raddr_valid;
+logic                   reg1_addr_same;
+logic                   reg2_addr_same;
 
 always_comb begin 
     reg_waddr_valid     = (reg_waddr_i != 32'b0) ? 1'b1 : 1'b0;

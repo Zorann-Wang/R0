@@ -28,16 +28,16 @@ module inst_execute (
     
     // memory
     input   wire [`MEM_DATA_BUS]        mem_rdata_i,
-    output  wire                        mem_rib_rreq_o,
+    output  logic                       mem_rib_rreq_o,
     output  reg  [`MEM_ADDR_BUS]        mem_raddr_o,
     output  reg                         mem_rib_wreq_o,
     output  reg                         mem_wen_o, 
-    output  wire [`MEM_ADDR_BUS]        mem_waddr_o, 
+    output  logic[`MEM_ADDR_BUS]        mem_waddr_o, 
     output  reg  [`MEM_DATA_BUS]        mem_wdata_o,
 
     // jump
-    output  wire                        jump_flag_o,
-    output  wire [`INST_ADDR_BUS]       jump_addr_o,
+    output  logic                       jump_flag_o,
+    output  logic[`INST_ADDR_BUS]       jump_addr_o,
 
     input   wire                        int_flag_i,          
     input   wire [`INST_ADDR_BUS]       int_addr_i, 
@@ -51,15 +51,15 @@ module inst_execute (
     output  reg  [3:0]                  alu_op_o
 );
 
-wire [6:0]              func7;
-wire [2:0]              func3;
-wire [6:0]              opcode;
-wire [`INST_ADDR_BUS]   jump_addr;
-wire                    reg_wen;
-wire                    csr_wen;
-wire                    mem_rib_rreq;
-wire                    mem_rib_wreq;
-wire                    mem_wen;
+logic [6:0]              func7;
+logic [2:0]              func3;
+logic [6:0]              opcode;
+logic [`INST_ADDR_BUS]   jump_addr;
+logic                    reg_wen;
+logic                    csr_wen;
+logic                    mem_rib_rreq;
+logic                    mem_rib_wreq;
+logic                    mem_wen;
 
 always_comb begin
     func7           = inst_i [31:25];
